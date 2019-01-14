@@ -68,6 +68,8 @@ static struct {
 
 
 void gameHandleEvents(void){
+    // We quit if key 'q' is pressed or window is closed with mouse
+
     SDL_Event event;
     while(SDL_PollEvent(&event)) {
 
@@ -81,6 +83,7 @@ void gameHandleEvents(void){
     }
 }
 
+// quit if window is closed
 void quitOnSDL_QUIT(SDL_Event *event){
     switch(event->type) {
         case SDL_QUIT: {
@@ -88,6 +91,7 @@ void quitOnSDL_QUIT(SDL_Event *event){
         } break;
     }
 }
+
 
 void gameInit(void) {
     printf("game_init()n");
@@ -114,7 +118,6 @@ void gameInit(void) {
     Game.running = SDL_TRUE;
 
 }
-
 
 
 void gameQuit(void) {
@@ -160,6 +163,10 @@ void toggle(int *cellValue){
     else *cellValue = 0;
 }
 
+/*
+* iterates linked list of cells to toggle and toggles it
+* from live to dead or vice versa
+*/
 void iterateToggleList(Node *head, int *arr, int columns){
     Node *current = head;
 
@@ -184,37 +191,42 @@ void iterateToggleList(Node *head, int *arr, int columns){
     free(current);
 }
 
+/* toggles alive/dead for cells*/
 void nextGeneration(int *arr, int m, int n){
 
-    //create list of cells to toggle
+    //create list for cells to toggle
     Node *head = NULL;
     Node *current = malloc(sizeof(Node));
+
+    //loop through cells
     for (int i=0; i<m; i++){
         for (int j=0; j<n; j++){
             int cntNeighbours = 0;
+
+            //loop through neighbours...and cell itself
             for(int k=-1; k<2; k++){
                 for(int l=-1; l<2; l++){
 
-                    /* find neighbours coords
+                    /* Find neighbours coords.
                      * we wrap around array so that height and
                      * width is neighbour to 0
                      */
                     int nX = (i+k)%(m-1);
                     int nY = (j+l)%(n-1);
-                    cntNeighbours += *( arr+ (nX*n) + nY );
+                    cntNeighbours += *( arr + (nX*n) + nY ); /*arr[nX][nY]*/
                 }
             }
             int cell = *((arr+i*n) + j);
             // subtract self from count
             cntNeighbours -= cell;
 
-
+            // Test game of life rules that leads to toggle of alive/dead
             if ((cell == 1 && cntNeighbours < 2) || // dies from lack of neghbours
                 (cell == 1 && cntNeighbours > 3) ||  // dies from over population
                 (cell == 0 && cntNeighbours ==3) ) {  // new cell is born
 
                 //Add to list of cells to toggle
-                if (head == NULL) head = current;
+                if (head == NULL){ head = current; }
 
                 // Get current coordinate
                 Coord *coord = malloc(sizeof(Coord));
@@ -247,7 +259,7 @@ int main()
     // cells will be 0(dead) or 1(alive);
     int cells[countX][countY];
 
-    // Cointoss for each cell to decide if it's live or dead
+    // Coin toss for each cell to decide if it's live or dead
     for (int x=0; x<countX; x++){
         for (int y=0; y<countY; y++){
             cells[x][y] = rand() % 2;
@@ -266,7 +278,10 @@ int main()
         frameStart = SDL_GetTicks();
 
         Game.handleEvents();
+
+        // render cells
         render((int *)cells, countX, countY, Game.screen.renderer);
+        //calculate next generation
         nextGeneration((int *)cells, countX, countY);
 
         //Timer end
